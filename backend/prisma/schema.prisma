@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// PetStop schema definition
+
+// User model, to track users in the system
+model User {
+  id        Int      @id @default(autoincrement())  // Unique identifier
+  email     String   @unique                       // User email (must be unique)
+  name      String?                                  // Optional name field\
+  password  String   // Hashed password (never store plaintext passwords)
+  petSitter PetSitter? @relation(fields: [petSitterId], references: [id])  // Optional relation to PetSitter
+  petSitterId Int?   @unique   // Foreign key to PetSitter (unique for one-to-one relationship)
+  bookings  Booking[]  // A user can have multiple bookings
+  createdAt DateTime @default(now()) // Date the user signed up
+  updatedAt DateTime @updatedAt      // Date the user was last updated
+}
+
+// PetSitter model, representing a person who provides pet-sitting services
+model PetSitter {
+  id         Int      @id @default(autoincrement())  // Unique identifier
+  name       String                                 // PetSitter's name
+  user       User?    @relation                     // Relation back to a User (optional)
+  userId     Int?     @unique                       // Optional userId for one-to-one relation with User (unique)
+  bookings   Booking[] // A PetSitter can have many bookings
+  availability PetSitterAvailability[]  // Track PetSitter availability (multiple date ranges)
+  createdAt DateTime @default(now())  // When the PetSitter was created
+  updatedAt DateTime @updatedAt  // When the PetSitter was last updated
+}
+
+// Booking model, representing a pet sitting booking
+model Booking {
+  id         Int      @id @default(autoincrement())  // Unique identifier
+  startDate  DateTime                                // Booking start date
+  endDate    DateTime                                // Booking end date
+  petSitter  PetSitter @relation(fields: [petSitterId], references: [id]) // Link to PetSitter
+  petSitterId Int    // Foreign key to PetSitter
+  user       User     @relation(fields: [userId], references: [id])  // Link to User
+  userId     Int      // Foreign key to User
+}
+
+// PetSitterAvailability model, to track PetSitter's available dates
+model PetSitterAvailability {
+  id          Int      @id @default(autoincrement())  // Unique identifier
+  petSitter   PetSitter @relation(fields: [petSitterId], references: [id])  // Link to PetSitter
+  petSitterId Int     // Foreign key to PetSitter
+  startDate   DateTime  // Start of availability range
+  endDate     DateTime  // End of availability range
+}
+
+
+User-related Endpoints
+
+
