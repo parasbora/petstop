@@ -1,5 +1,4 @@
-```
-![petstop](/petstop.png)
+![petstop](petstop.png)
 
 A pet sitting service app.
 
