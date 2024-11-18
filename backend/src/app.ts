@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate'
+import { routes } from './routes';
 
 
 export const getPrisma = (database_url: string) => {
@@ -25,6 +26,7 @@ const app = new Hono<Env>()
   .basePath("/api")
 
 
+routes(app)
 
 app.get('/', c => {
   return c.json({ message: 'app.ts is up' });
