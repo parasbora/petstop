@@ -11,6 +11,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // PetStop schema definition
@@ -32,6 +33,10 @@ model User {
 model PetSitter {
   id         Int      @id @default(autoincrement())  // Unique identifier
   name       String                                 // PetSitter's name
+  bio        String?
+  experience Int?
+  hourlyRate Float?
+  serviceTypes String[]
   user       User?    @relation                     // Relation back to a User (optional)
   userId     Int?     @unique                       // Optional userId for one-to-one relation with User (unique)
   bookings   Booking[] // A PetSitter can have many bookings
@@ -60,7 +65,5 @@ model PetSitterAvailability {
   endDate     DateTime  // End of availability range
 }
 
-
-User-related Endpoints
 
 

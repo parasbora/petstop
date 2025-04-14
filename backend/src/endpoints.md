@@ -20,3 +20,5 @@ GET /bookings/user/:userId — Get all bookings made by a specific user
 GET /bookings/petsitter/:petSitterId — Get all bookings for a specific pet sitter
 PUT /bookings/:id — Update booking (e.g., change dates, status)
 DELETE /bookings/:id — Delete a booking
+
+what is wrong with you '

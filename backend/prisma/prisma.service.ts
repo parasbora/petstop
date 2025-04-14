@@ -38,7 +38,7 @@ export async function createUser(email: string, name: string, password: string) 
  * @param userId The ID of the user to fetch
  * @returns The user record or null
  */
-export async function findUserById(userId: string) {
+export async function findUserById(userId: number) {
   return prisma.user.findUnique({
     where: { id: userId },
   });

@@ -1,9 +1,30 @@
+import { Hono } from 'hono'
+import { verify } from 'hono/jwt'
+import { Env } from '../../app'
+import { Logger } from '../../utils/logger'
+import { handleError } from '../../utils/response'
 
-import { Hono } from "hono"
+export const authMiddleware = async (c: any, next: Function) => {
+  try {
+    const authHeader = c.req.header('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      Logger.warn('No auth token provided')
+      return handleError(c, null, 'No auth token provided', 401)
+    }
 
-const app = new Hono()
+    const token = authHeader.split(' ')[1]
+    const payload = await verify(token, c.env.JWT_SECRET)
+    
+    if (!payload || !payload.id) {
+      Logger.warn('Invalid token payload')
+      return handleError(c, null, 'Invalid token', 401)
+    }
 
-app.use('*', async (c, next) => {
+    // Set userId in context for use in routes
+    c.set('userId', payload.id)
     await next()
-    c.header('x-custom-message', 'This is middleware!')
-  })
+  } catch (error) {
+    Logger.error('Auth middleware error', error as Error)
+    return handleError(c, error, 'Invalid token', 401)
+  }
+}
