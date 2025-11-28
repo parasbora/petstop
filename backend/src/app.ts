@@ -5,6 +5,7 @@ import { routes } from './routes';
 import { logger } from 'hono/logger'
 import { showRoutes } from 'hono/dev';
 import { prismaMiddleware } from './routes/middleware/prisma';
+import { cors } from 'hono/cors'
 
 export const getPrisma = (database_url: string) => {
   const prisma = new PrismaClient({
@@ -26,10 +27,17 @@ export type Env = {
 
 const app = new Hono<Env>()
   .use(logger())
+  // Handle CORS and preflight early
+  .use('*', cors({
+    origin: '*',
+    allowMethods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+    allowHeaders: ['*'],
+  }))
   .use('*', prismaMiddleware)
   .basePath("/api")
 
 routes(app)
+
 
 app.get('/', c => {
   return c.json({ message: 'app.ts is up' });
@@ -40,5 +48,7 @@ showRoutes(app, {
 })
 
 export default app
+
+// (CORS already applied above)
 
 

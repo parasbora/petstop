@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
 
 
-const bookings = new Hono()
+
+const bookings = new Hono<Env>()
+
 
 bookings.get('/', c => c.text('petstop bookings:')) // GET /user
 

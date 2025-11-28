@@ -1,6 +1,5 @@
-import { Hono } from 'hono'
+
 import { verify } from 'hono/jwt'
-import { Env } from '../../app'
 import { Logger } from '../../utils/logger'
 import { handleError } from '../../utils/response'
 

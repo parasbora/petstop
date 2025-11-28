@@ -159,6 +159,7 @@ export class PetSitterService {
         skip: (page - 1) * limit,
         take: limit,
         include: {
+          
           user: {
             select: {
               id: true,
@@ -169,6 +170,7 @@ export class PetSitterService {
           availability: true
         }
       })
+   
       return petSitters
     } catch (error) {
       Logger.error('Failed to list pet sitters', error as Error)

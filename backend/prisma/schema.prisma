@@ -43,6 +43,9 @@ model PetSitter {
   availability PetSitterAvailability[]  // Track PetSitter availability (multiple date ranges)
   createdAt DateTime @default(now())  // When the PetSitter was created
   updatedAt DateTime @updatedAt  // When the PetSitter was last updated
+  location String @default("Unknown")
+
+
 }
 
 // Booking model, representing a pet sitting booking

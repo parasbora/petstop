@@ -6,11 +6,31 @@ import { handleError, successResponse } from '../../utils/response'
 import { Logger } from '../../utils/logger'
 import { authMiddleware } from '../middleware/auth'
 
+
 const petsitters = new Hono<Env>()
+
+
+// ---- PUBLIC ROUTES ----
+petsitters.get('/', async (c) => {
+  const petSitterService = new PetSitterService(c.get('prisma'))
+  const page = parseInt(c.req.query('page') || '1')
+  const limit = parseInt(c.req.query('limit') || '10')
+
+  try {
+    const petSitters = await petSitterService.list(page, limit)
+    
+    console.log(petSitters)
+    return successResponse(c, petSitters)
+  } catch (err) {
+    return handleError(c, err, "Failed to list pet sitters")
+  }
+})
 
 // Apply auth middleware to all routes
 petsitters.use('*', authMiddleware)
 
+
+// ---- PROTECTED ROUTES ----
 petsitters.post('/', async (c) => {
   const petSitterService = new PetSitterService(c.get('prisma'))
   const body = await c.req.json()
@@ -30,18 +50,7 @@ petsitters.post('/', async (c) => {
   }
 })
 
-petsitters.get('/', async (c) => {
-  const petSitterService = new PetSitterService(c.get('prisma'))
-  const page = parseInt(c.req.query('page') || '1')
-  const limit = parseInt(c.req.query('limit') || '10')
 
-  try {
-    const petSitters = await petSitterService.list(page, limit)
-    return successResponse(c, petSitters)
-  } catch (err) {
-    return handleError(c, err, "Failed to list pet sitters")
-  }
-})
 
 petsitters.get('/:id', async (c) => {
   const petSitterService = new PetSitterService(c.get('prisma'))

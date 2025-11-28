@@ -9,7 +9,8 @@ export const PetSitterSchema = z.object({
   availability: z.array(z.object({
     startDate: z.string().datetime(),
     endDate: z.string().datetime()
-  })).optional()
+  })).optional(),
+  location : z.string().min(2)
 })
 
 export const PetSitterUpdateSchema = PetSitterSchema.partial().refine(data => Object.keys(data).length > 0, {
