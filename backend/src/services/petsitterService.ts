@@ -56,6 +56,8 @@ export class PetSitterService {
   }
 
   async findById(id: number) {
+
+    
     try {
       const petSitter = await this.prisma.petSitter.findUnique({
         where: { id },
@@ -73,6 +75,7 @@ export class PetSitterService {
       if (!petSitter) {
         throw new AppError('Pet sitter not found', 404)
       }
+      
       return petSitter
     } catch (error) {
       if (error instanceof AppError) throw error

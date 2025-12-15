@@ -1,3 +1,4 @@
+// src/routes/users/index.ts
 import { Hono } from 'hono'
 import { UserService } from '../../services/userService'
 import { Env } from '../../app'
@@ -8,67 +9,53 @@ import { authMiddleware } from '../middleware/auth'
 
 const users = new Hono<Env>()
 
-// Apply auth middleware to all routes except the root
+// Apply auth middleware to all routes
 users.use('*', authMiddleware)
-users.get('/', c => c.text('petstop users:'))
 
-// Helper function for ID comparison
-const compareIds = (id1: string | number, id2: string | number): boolean => {
-  return String(id1) === String(id2)
-}
-
-users.get('/:id', async (c) => {
+// GET /users/me  → Fetch own profile
+users.get('/me', async (c) => {
   const userService = new UserService(c.get('prisma'))
-  const id = parseInt(c.req.param('id'), 10)
   const userId = c.get('userId')
-
-  Logger.debug('Fetching user profile', { requestedId: id, userId })
-
-  if (!compareIds(userId, id)) {
-    Logger.warn('Unauthorized profile access', { requestedId: id, userId })
-    return handleError(c, null, "Unauthorized", 403)
-  }
-
+console.log("===============",userId)
+  Logger.debug('Fetching own profile', { userId })
+  console.log("===============",userId)
   try {
-    const userDetails = await userService.findById(id)
+    const userDetails = await userService.findById(Number(userId))
+
     if (!userDetails) {
-      Logger.warn('User not found', { userId: id })
+      Logger.warn('User not found', { userId })
       return handleError(c, null, "User not found", 404)
     }
+
     return successResponse(c, userDetails)
   } catch (err) {
-    return handleError(c, err, "Failed to fetch user")
+    return handleError(c, err, "Failed to fetch profile")
   }
 })
 
-users.put("/:id", async (c) => {
+// PUT /users/me → Update own profile
+users.put('/me', async (c) => {
   const userService = new UserService(c.get('prisma'))
-  const body = await c.req.json()
-  const id = parseInt(c.req.param('id'), 10)
   const userId = c.get('userId')
 
-  Logger.info('Updating user profile', { userId: id })
+  const body = await c.req.json()
+  Logger.info('Updating own profile', { userId })
 
-  if (!compareIds(userId, id)) {
-    Logger.warn('Unauthorized profile update', { requestedId: id, userId })
-    return handleError(c, null, "Unauthorized", 403)
-  }
-
-  const { success, data, error } = UserUpdateSchema.safeParse(body)
-  if (!success) {
-    Logger.warn('Invalid update data', { 
-      errors: error.errors,
-      userId: id
+  const parsed = UserUpdateSchema.safeParse(body)
+  if (!parsed.success) {
+    Logger.warn('Invalid update data', {
+      errors: parsed.error.errors,
+      userId
     })
-    return handleError(c, error, error.errors[0].message, 400)
+    return handleError(c, parsed.error, parsed.error.errors[0].message, 400)
   }
 
   try {
-    const updatedUser = await userService.update(id, data)
+    const updatedUser = await userService.update(Number(userId), parsed.data)
     return successResponse(c, updatedUser, "Profile updated successfully")
   } catch (err) {
     return handleError(c, err, "Failed to update profile")
   }
 })
 
-export default users 
+export default users

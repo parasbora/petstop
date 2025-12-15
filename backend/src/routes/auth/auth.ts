@@ -10,10 +10,11 @@ import { rateLimitMiddleware } from '../middleware/rateLimit'
 const auth = new Hono<Env>()
 
 // Apply rate limiting middleware
-auth.post('/login', rateLimitMiddleware('login'))
+// auth.post('/login', rateLimitMiddleware('login'))
 auth.post('/signup', rateLimitMiddleware('signup'))
 
 auth.post('/signup', async (c) => {
+  
   const userService = new UserService(c.get('prisma'))
   const body = await c.req.json()
 

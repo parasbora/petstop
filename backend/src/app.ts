@@ -1,18 +1,11 @@
 import { Hono } from 'hono'
-import { PrismaClient } from '@prisma/client';
-import { withAccelerate } from '@prisma/extension-accelerate'
+
 import { routes } from './routes';
 import { logger } from 'hono/logger'
 import { showRoutes } from 'hono/dev';
 import { prismaMiddleware } from './routes/middleware/prisma';
 import { cors } from 'hono/cors'
 
-export const getPrisma = (database_url: string) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: database_url,
-  }).$extends(withAccelerate())
-  return prisma
-}
 
 export type Env = {
   Bindings: {
@@ -21,7 +14,7 @@ export type Env = {
   }
   Variables: {
     userId: string
-    prisma: PrismaClient
+    prisma: any
   }
 }
 
@@ -30,7 +23,7 @@ const app = new Hono<Env>()
   // Handle CORS and preflight early
   .use('*', cors({
     origin: '*',
-    allowMethods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+    allowMethods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowHeaders: ['*'],
   }))
   .use('*', prismaMiddleware)
@@ -39,8 +32,8 @@ const app = new Hono<Env>()
 routes(app)
 
 
-app.get('/', c => {
-  return c.json({ message: 'app.ts is up' });
+app.get('/health', c => {
+  return c.json({ message: 'petstop backend is up and running' });
 });
 
 showRoutes(app, {

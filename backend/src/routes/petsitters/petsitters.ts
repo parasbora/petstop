@@ -18,11 +18,24 @@ petsitters.get('/', async (c) => {
 
   try {
     const petSitters = await petSitterService.list(page, limit)
-    
-    console.log(petSitters)
+
     return successResponse(c, petSitters)
   } catch (err) {
     return handleError(c, err, "Failed to list pet sitters")
+  }
+})
+
+petsitters.get('/:id', async (c) => {
+  const petSitterService = new PetSitterService(c.get('prisma'))
+  const id = parseInt(c.req.param('id'))
+
+ console.log("param:", c.req.param());
+
+  try {
+    const petSitter = await petSitterService.findById(id)
+    return successResponse(c, petSitter)
+  } catch (err) {
+    return handleError(c, err, "Failed to fetch pet sitter")
   }
 })
 
@@ -52,17 +65,7 @@ petsitters.post('/', async (c) => {
 
 
 
-petsitters.get('/:id', async (c) => {
-  const petSitterService = new PetSitterService(c.get('prisma'))
-  const id = parseInt(c.req.param('id'))
 
-  try {
-    const petSitter = await petSitterService.findById(id)
-    return successResponse(c, petSitter)
-  } catch (err) {
-    return handleError(c, err, "Failed to fetch pet sitter")
-  }
-})
 
 petsitters.put('/:id', async (c) => {
   const petSitterService = new PetSitterService(c.get('prisma'))

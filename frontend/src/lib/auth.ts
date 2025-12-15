@@ -10,6 +10,7 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string) {
+
   localStorage.setItem("accessToken", token);
   window.dispatchEvent(new CustomEvent(AUTH_EVENT));
 }
@@ -24,12 +25,12 @@ export function isAuthenticated(): boolean {
 }
 
 export function apiBase(): string {
-  // Vite-style env
-  // @ts-ignore
-  const raw = (import.meta as any).env?.VITE_API_BASE || "http://127.0.0.1:8787/api";
-  return raw.endsWith('/') ? raw.slice(0, -1) : raw;
-}
+  const raw =
+    import.meta.env.VITE_API_BASE ??
+    "http://127.0.0.1:8787/api";
 
+  return raw.endsWith("/") ? raw.slice(0, -1) : raw;
+}
 export function onAuthChange(listener: () => void) {
   const handler = () => listener();
   window.addEventListener(AUTH_EVENT, handler as EventListener);

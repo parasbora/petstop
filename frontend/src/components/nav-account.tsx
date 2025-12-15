@@ -7,15 +7,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { isAuthenticated, clearToken, onAuthChange } from "@/lib/auth"
+import { isAuthenticated, onAuthChange } from "@/lib/auth"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-
+import { useLogoutMutation } from "@/api/authApi"
 
 export function NavAccount() {
   const navigate = useNavigate()
   const [authed, setAuthed] = useState(() => isAuthenticated())
-
+  const  [logout ] = useLogoutMutation()
   useEffect(() => {
     const off = onAuthChange(() => setAuthed(isAuthenticated()))
     return off
@@ -47,7 +47,7 @@ export function NavAccount() {
               <User />
               profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { clearToken(); navigate('/'); }}>
+            <DropdownMenuItem onClick={() => { logout(); navigate('/'); }}>
               <LogOutIcon/>logout
             </DropdownMenuItem>
           </>

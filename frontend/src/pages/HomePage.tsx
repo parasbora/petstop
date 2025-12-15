@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 function HomePage() {
   return (
-    <div className="text-center mt-40">
+    <div className="mt-30 text-center">
       <div className="flex flex-col items-center gap-4">
         <img
           src="/logo.svg"
@@ -16,12 +16,12 @@ function HomePage() {
         </div>
         <div className="flex gap-2 mt-8">
           <Link to="/browse">
-          <button className="px-4 py-2 rounded-full bg-primary text-white font-semibold text-sm  hover:bg-hero-primary/90 transition shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-primary/80 transition-all ease-out active:scale-95" to="/browse">
-            Hire a Petsitter
-          </button>
+            <button className="px-4 py-2 rounded-full bg-primary text-white font-semibold text-sm   transition shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/12 hover:bg-primary/80 transition-all ease-out active:scale-95 cursor-pointer" to="/browse">
+              Hire a Petsitter
+            </button>
           </Link>
-   
-          <button className="px-4 py-2 rounded-full border border-primary   text-primary font-semibold text-sm shadow hover:bg-hero-primary hover:text-white transition hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12] hover:bg-foreground hover:text-background transition-all ease-out active:scale-95">
+
+          <button className="px-4 py-2 rounded-full border   text-primary font-semibold text-sm shadow-sm hover:text-primary/80   hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)]  border-white/12    transition-all ease-out active:scale-95 cursor-pointer ">
             Apply as Petsitter
           </button>
         </div>
@@ -36,8 +36,8 @@ function HomePage() {
           </p>
           {/* <div className="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-2">
             <div className="relative lg:row-span-2">
-              <div className="absolute inset-px rounded-lg bg-card lg:rounded-l-[2rem]"></div>
-              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] lg:rounded-l-[calc(2rem+1px)]">
+              <div className="absolute inset-px rounded-lg bg-card lg:rounded-l-4xl"></div>
+              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-l-[calc(2rem+1px)]">
                 <div className="px-8 pb-3 pt-8 sm:px-10 sm:pb-0 sm:pt-10">
                   <p className="mt-2 text-lg font-medium tracking-tight  max-lg:text-center">
                     Instant Booking
@@ -47,7 +47,7 @@ function HomePage() {
                     Book verified pet sitters in your area with just a few taps. Real-time availability and instant confirmation.
                   </p>
                 </div>
-                <div className="relative min-h-[30rem] w-full grow [container-type:inline-size] max-lg:mx-auto max-lg:max-w-sm">
+                <div className="relative min-h-120 w-full grow @container max-lg:mx-auto max-lg:max-w-sm">
                   <div className="absolute inset-x-10 bottom-0 top-10 overflow-hidden rounded-t-[12cqw] border-x-[3cqw] border-t-[3cqw] border-border bg-card shadow-2xl">
                     <img
                       className="size-full object-cover object-top"
@@ -57,11 +57,11 @@ function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5 lg:rounded-l-[2rem]"></div>
+              <div className="pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5 lg:rounded-l-4xl"></div>
             </div>
             <div className="relative max-lg:row-start-1">
-              <div className="absolute inset-px rounded-lg bg-card max-lg:rounded-t-[2rem]"></div>
-              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] max-lg:rounded-t-[calc(2rem+1px)]">
+              <div className="absolute inset-px rounded-lg bg-card max-lg:rounded-t-4xl"></div>
+              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-t-[calc(2rem+1px)]">
                 <div className="px-8 pt-8 sm:px-10 sm:pt-10">
                   <p className="mt-2 text-lg font-medium tracking-tight max-lg:text-center">
                     Live Updates
@@ -78,11 +78,11 @@ function HomePage() {
                   />
                 </div>
               </div>
-              <div className="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5 max-lg:rounded-t-[2rem]"></div>
+              <div className="pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5 max-lg:rounded-t-4xl"></div>
             </div>
             <div className="relative max-lg:row-start-3 lg:col-start-2 lg:row-start-2">
               <div className="absolute inset-px rounded-lg bg-card"></div>
-              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)]">
+              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)]">
                 <div className="px-8 pt-8 sm:px-10 sm:pt-10">
                   <p className="mt-2 text-lg font-medium tracking-tight max-lg:text-center">
                     24/7 Support
@@ -91,7 +91,7 @@ function HomePage() {
                     Round-the-clock customer support for peace of mind
                   </p>
                 </div>
-                <div className="flex flex-1 items-center [container-type:inline-size] max-lg:py-6 lg:pb-2">
+                <div className="flex flex-1 items-center @container max-lg:py-6 lg:pb-2">
                   <img
                     className="h-[min(152px,40cqw)] object-cover"
                     src="https://tailwindui.com/plus/img/component-images/bento-03-security.png"
@@ -99,11 +99,11 @@ function HomePage() {
                   />
                 </div>
               </div>
-              <div className="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5"></div>
+              <div className="pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5"></div>
             </div>
             <div className="relative lg:row-span-2">
-              <div className="absolute inset-px rounded-lg bg-card max-lg:rounded-b-[2rem] lg:rounded-r-[2rem]"></div>
-              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(theme(borderRadius.lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-r-[calc(2rem+1px)]">
+              <div className="absolute inset-px rounded-lg bg-card max-lg:rounded-b-4xl lg:rounded-r-4xl"></div>
+              <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-r-[calc(2rem+1px)]">
                 <div className="px-8 pb-3 pt-8 sm:px-10 sm:pb-0 sm:pt-10">
                   <p className="mt-2 text-lg font-medium tracking-tight max-lg:text-center">
                     Verified Sitters
@@ -114,7 +114,7 @@ function HomePage() {
                 </div>
 
               </div>
-              <div className="pointer-events-none absolute inset-px rounded-lg shadow ring-1 ring-black/5 max-lg:rounded-b-[2rem] lg:rounded-r-[2rem]"></div>
+              <div className="pointer-events-none absolute inset-px rounded-lg shadow-sm ring-1 ring-black/5 max-lg:rounded-b-4xl lg:rounded-r-4xl"></div>
             </div>
           </div> */}
         </div>

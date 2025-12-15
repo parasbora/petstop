@@ -1,12 +1,33 @@
-
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "./ui/badge";
-import { MessageSquare, Star, MapPin, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge"; // Check your import path
+import { MessageSquare, Star, MapPin, Calendar } from "lucide-react";
 import { apiBase, getToken } from "@/lib/auth";
+import { Link } from "react-router-dom";
+
+// --- Types ---
+
+type QueryValue = string | number | boolean | undefined | null;
+type PetSitterApiResponse = {
+  id: number;
+  name?: string;
+  avatarUrl?: string;
+  user?: { avatarUrl?: string };
+  dogSitting?: boolean;
+  catSitting?: boolean;
+  petTypes?: Array<"dog" | "cat">;
+  hourlyRate?: number;
+  rating?: number;
+  reviews?: number;
+  location?: string;
+  city?: string;
+  bio?: string;
+  description?: string;
+  serviceTypes?: string[];
+};
+type QueryParams = Record<string, QueryValue>;
 
 type FiltersState = {
   petType: "cat" | "dog" | "both" | "any";
@@ -27,7 +48,7 @@ type PetSitter = {
   reviews: number;
   location: string;
   bio: string;
-  serviceType: any;
+  serviceType: string[];
 };
 
 const API_BASE = apiBase();
@@ -36,7 +57,8 @@ type ListProps = {
   filters: FiltersState;
 };
 
-const buildQuery = (params: Record<string, any>) => {
+// --- Helpers ---
+const buildQuery = (params: QueryParams) => {
   const q = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {
     if (v === undefined || v === null || v === "") return;
@@ -46,9 +68,9 @@ const buildQuery = (params: Record<string, any>) => {
 };
 
 const PetsitterList: React.FC<ListProps> = ({ filters }) => {
-  const [sortBy, setSortBy] = useState<"relevance" | "price_asc" | "price_desc" | "rating_desc">("relevance");
+  const [sortBy,] = useState<"relevance" | "price_asc" | "price_desc" | "rating_desc">("relevance");
   const [page, setPage] = useState(1);
-  const pageSize = 6;
+  const pageSize = 10;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +80,11 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
 
   // Reset to page 1 whenever filters or sort change
   useEffect(() => {
+    console.log('Page reset triggered');
     setPage(1);
   }, [JSON.stringify(filters), sortBy]);
 
-
+  // Fetch logic
   useEffect(() => {
     const controller = new AbortController();
 
@@ -69,15 +92,12 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
       setLoading(true);
       setError(null);
       try {
-        const params: Record<string, any> = {
+        const params: QueryParams = {
           page,
           limit: pageSize,
         };
 
-        if (sortBy && sortBy !== "relevance") {
-          params.sort = sortBy;
-        }
-
+        if (sortBy && sortBy !== "relevance") params.sort = sortBy;
         if (filters.petType && filters.petType !== "any") params.petType = filters.petType;
         if (typeof filters.maxPricePerHour === "number") params.maxPricePerHour = filters.maxPricePerHour;
         if (typeof filters.minPricePerHour === "number") params.minPricePerHour = filters.minPricePerHour;
@@ -87,8 +107,8 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
 
         const query = buildQuery(params);
         const url = `${API_BASE}/petsitters${query ? `?${query}` : ""}`;
-
         const token = getToken() || "";
+
         const res = await fetch(url, {
           method: "GET",
           headers: {
@@ -104,18 +124,21 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
         }
 
         const body = await res.json();
-        const serverItems = (body?.data || []) as any[];
-        const mapped: PetSitter[] = serverItems.map((s: any) => ({
+        const serverItems: PetSitterApiResponse[] = body?.data ?? [];
+
+        const mapped: PetSitter[] = serverItems.map((s) => ({
           id: s.id,
-          name: s.name || s.name || "Unknown",
+          name: s.name || "Unknown",
           avatarUrl: s.avatarUrl || s.user?.avatarUrl,
-          petTypes: (["dog", "cat"] as Array<"dog" | "cat">).filter((t) => s[`${t}Sitting`] || s.petTypes?.includes?.(t)),
+          petTypes: (["dog", "cat"] as const).filter(
+            (t) => s.petTypes?.includes(t) || s[`${t}Sitting` as keyof PetSitterApiResponse]
+          ),
           pricePerHour: Number(s.hourlyRate ?? 0),
           rating: Number(s.rating ?? 0),
           reviews: Number(s.reviews ?? 0),
           location: s.location || s.city || "",
           bio: s.bio || s.description || "",
-          serviceType: s.serviceTypes || []
+          serviceType: s.serviceTypes || [],
         }));
 
         setItems(prev => page === 1 ? mapped : [...prev, ...mapped]);
@@ -129,9 +152,9 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
         } else {
           setHasMore(mapped.length === pageSize);
         }
-      } catch (e: any) {
-        if (e.name !== "AbortError") {
-          setError(e.message || "Something went wrong");
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name !== "AbortError") {
+          setError(e.message);
         }
       } finally {
         setLoading(false);
@@ -139,11 +162,9 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
     };
 
     fetchSitters();
-
-    return () => {
-      controller.abort();
-    };
-  }, [page, sortBy, filters.petType, filters.maxPricePerHour, filters.minPricePerHour, filters.ratingMin, filters.nameQuery, filters.locationQuery]);
+    console.log('Fetch effect triggered with page:', page, 'filters:', filters);
+    return () => controller.abort();
+  }, [page, sortBy, JSON.stringify(filters)]); // Simplified deps
 
   const resultsText = useMemo(() => {
     if (loading) return "Searching...";
@@ -152,28 +173,28 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
     return `${items.length} sitter${items.length !== 1 ? 's' : ''}`;
   }, [items.length, totalCount, loading]);
 
-  // Loading skeletons
+  // --- Components ---
+
   const LoadingSkeletons = () => (
     <div className="space-y-4">
       {Array.from({ length: 4 }).map((_, index) => (
-        <Card key={index} className="p-4 animate-pulse">
-          <div className="flex gap-4 items-start">
-            <Skeleton className="w-20 h-20 rounded-full" />
-            <div className="flex-1 space-y-3">
-              <div className="flex justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-60" />
+        <Card key={index} className="p-3 sm:p-4 animate-pulse">
+          <div className="flex gap-3 sm:gap-4 items-start">
+            <Skeleton className="w-16 h-16 sm:w-24 sm:h-24 rounded-md shrink-0" />
+            <div className="flex-1 space-y-3 min-w-0">
+              <div className="flex justify-between items-start">
+                <div className="space-y-2 w-full">
+                  <Skeleton className="h-5 w-32 sm:w-40" />
+                  <Skeleton className="h-4 w-24 sm:w-60" />
                 </div>
-                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-6 w-12 sm:w-16 shrink-0 ml-2" />
               </div>
               <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <div className="flex justify-between items-center">
-                <Skeleton className="h-6 w-32" />
-                <div className="flex gap-2">
-                  <Skeleton className="h-9 w-24" />
-                  <Skeleton className="h-9 w-24" />
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between pt-2">
+                <Skeleton className="h-6 w-24" />
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Skeleton className="h-9 flex-1 sm:w-24" />
+                  <Skeleton className="h-9 flex-1 sm:w-24" />
                 </div>
               </div>
             </div>
@@ -184,44 +205,19 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
   );
 
   return (
-    <div className="w-full flex flex-col min-h-0"> {/* Changed from min-h-[calc(100dvh-8rem)] to min-h-0 */}
-      {/* Header Section - Fixed */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6 p-1 bg-background">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-foreground">Pet Sitters</h2>
-          <div className={`text-sm transition-colors ${loading ? "text-muted-foreground" : "text-muted-foreground"
-            }`}>
-            {resultsText}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-medium hidden sm:block">Sort by</div>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-            <SelectTrigger className="w-[180px] bg-background">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="relevance">Relevance</SelectItem>
-              <SelectItem value="price_asc">Price: Low to High</SelectItem>
-              <SelectItem value="price_desc">Price: High to Low</SelectItem>
-              <SelectItem value="rating_desc">Highest Rating</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <div className="w-full flex flex-col min-h-0">
 
       {/* Error State */}
       {error && (
-        <Card className="mb-6 border-primary bg-primary/10">
+        <Card className="mb-6 border-destructive/50 bg-destructive/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="text-primary text-sm">{error}</div>
+              <div className="text-destructive text-sm font-medium">{error}</div>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => window.location.reload()}
-                className="ml-auto"
+                className="ml-auto bg-background hover:bg-accent"
               >
                 Try Again
               </Button>
@@ -230,24 +226,31 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
         </Card>
       )}
 
-      {/* Scrollable Content Area - Confined height */}
-      <div className="flex-1 min-h-0 flex flex-col"> {/* Added flex container */}
-        {/* Scrollable List Area */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-4 min-h-0"> {/* Added min-h-0 and flex-1 */}
+      {/* Results Count Header */}
+      {!error && !loading && items.length > 0 && (
+        <div className="mb-2 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {resultsText}
+        </div>
+      )}
+
+      {/* Scrollable List Area */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-3 sm:space-y-4 min-h-0 pb-4">
+
           {loading && page === 1 ? (
             <LoadingSkeletons />
-          ) : items.length === 0 ? (
-            <Card className="text-center py-12 border-dashed">
+          ) : (items.length === 0 && !loading) ? (
+            <Card className="text-center py-12 border-dashed bg-muted/30">
               <CardContent>
                 <div className="text-muted-foreground mb-4">
                   <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <h3 className="font-semibold text-lg mb-2">No sitters found</h3>
                   <p className="text-sm max-w-sm mx-auto">
-                    Try adjusting your filters or search criteria to find more pet sitters in your area.
+                    Try adjusting your filters or search criteria.
                   </p>
                 </div>
-                <Button variant="outline" onClick={() => setPage(1)}>
-                  Clear Filters
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Refresh
                 </Button>
               </CardContent>
             </Card>
@@ -256,88 +259,93 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
               {items.map((sitter) => (
                 <Card
                   key={sitter.id}
-                  className="p-4 hover:shadow-lg transition-all duration-200  group  cursor-pointer"
+                  className="p-3 sm:p-4 hover:shadow-md transition-all duration-200 group cursor-pointer border-muted-foreground/10"
                 >
-                  <div className="flex gap-4 items-start">
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                      <div className="w-24 h-24 rounded-md overflow-hidden bg-muted border-2 border-border group-hover:border-primary/50 transition-colors">
+                  <div className="flex gap-3 sm:gap-4 items-start">
+                    {/* Avatar - Responsive sizing */}
+                    <div className="shrink-0 relative">
+                      <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg overflow-hidden bg-muted border border-border group-hover:border-primary/50 transition-colors">
                         <img
-                          src={
-                            sitter.avatarUrl?.trim() ||
-                            "https://images.pexels.com/photos/2607544/pexels-photo-2607544.jpeg"
-                          }
+                          src={sitter.avatarUrl?.trim() || "https://images.pexels.com/photos/2607544/pexels-photo-2607544.jpeg"}
                           alt={sitter.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                      </div>
+                      {/* Mobile Badge for Pet Type (optional visual flare) */}
+                      <div className="absolute -bottom-1 -right-1 sm:hidden bg-background rounded-full border border-border p-0.5 shadow-sm">
+                        {sitter.petTypes.includes("dog") ? <span className="text-xs">🐶</span> : <span className="text-xs">🐱</span>}
                       </div>
                     </div>
 
                     {/* Main Content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Header Row */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="space-y-2">
-                          <div>
-                            <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
-                              {sitter.name}
-                            </h3>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1.5">
-                                <MapPin className="w-4 h-4" />
-                                {sitter.location}
-                              </span>
-                              <span className="flex items-center gap-1.5">
-                                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                                {sitter.rating.toFixed(1)} ({sitter.reviews} review{sitter.reviews !== 1 ? 's' : ''})
-                              </span>
-                            </div>
+                    <div className="flex-1 min-w-0 flex flex-col h-full">
+
+                      {/* Header Row: Name & Price */}
+                      <div className="flex justify-between items-start mb-1 sm:mb-2">
+                        <div className="min-w-0 pr-2">
+                          <h3 className="font-semibold text-base sm:text-lg truncate text-foreground group-hover:text-primary transition-colors">
+                            {sitter.name}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1 truncate">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              {sitter.location}
+                            </span>
+                            <span className="flex items-center gap-1 font-medium text-foreground/80">
+                              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                              {sitter.rating.toFixed(1)} <span className="text-muted-foreground font-normal">({sitter.reviews})</span>
+                            </span>
                           </div>
                         </div>
 
-                        <div className="text-right flex-shrink-0 ml-4">
-                          <div className="text-xl font-bold text-primary mb-1">
-                            ${sitter.pricePerHour}
-                            <span className="text-sm font-normal text-muted-foreground">/hr</span>
+                        {/* Price Column */}
+                        <div className="text-right shrink-0">
+                          <div className="text-lg sm:text-xl font-bold text-primary leading-tight">
+                            ₹{sitter.pricePerHour}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            {sitter.petTypes.sort().join(" & ")} specialist
+                          <div className="text-[10px] sm:text-xs text-muted-foreground font-medium">
+                            /hour
                           </div>
                         </div>
                       </div>
 
                       {/* Bio */}
-                      <p className="text-foreground/80 mb-4 line-clamp-2 leading-relaxed text-sm">
-                        {sitter.bio || "Experienced pet sitter dedicated to providing the best care for your furry friends."}
+                      <p className="text-muted-foreground text-xs sm:text-sm line-clamp-2 leading-relaxed mb-3 sm:mb-4">
+                        {sitter.bio || `Hi! I am ${sitter.name}, a professional pet lover ready to take care of your furry family members.`}
                       </p>
 
-                      {/* Footer - Services & Actions */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      {/* Footer: Services & Actions */}
+                      <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
                         {/* Service Badges */}
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           {Array.isArray(sitter.serviceType) && sitter.serviceType.slice(0, 3).map((service) => (
                             <Badge
                               key={service}
                               variant="secondary"
-                              className="px-2.5 py-1 text-xs bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                              className="px-1.5 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs bg-secondary/40 font-normal text-secondary-foreground"
                             >
                               {service}
                             </Badge>
                           ))}
-                          {sitter.serviceType.length > 3 && (
-                            <Badge variant="outline" className="px-2.5 py-1 text-xs">
-                              +{sitter.serviceType.length - 3} more
+                          {/* Pet Type Badges */}
+                          {sitter.petTypes.map(t => (
+                            <Badge key={t} variant="outline" className="px-1.5 py-0.5 text-[10px] sm:text-xs capitalize border-primary/20 text-primary/80">
+                              {t}
                             </Badge>
-                          )}
+                          ))}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 flex-shrink-0">
-                          <Button size="sm" variant="outline" className="h-9 px-4 text-xs sm:text-sm">
-                            View Profile
-                          </Button>
-                          <Button size="sm" className="h-9 px-4 gap-2 text-xs sm:text-sm">
-                            <MessageSquare className="w-4 h-4" />
+                        {/* Action Buttons - Grid on Mobile, Flex on Desktop */}
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 pt-1 sm:pt-0">
+                          <Link to={`/sitter-profile/${sitter.id}`} >
+
+                            <Button size="sm" variant="outline" className="h-8 sm:h-9 text-xs w-full"  >
+                              Profile
+                            </Button>
+                          </Link>
+                          <Button size="sm" className="h-8 sm:h-9 gap-1.5 text-xs w-full">
+                            <MessageSquare className="w-3.5 h-3.5" />
                             Message
                           </Button>
                         </div>
@@ -347,63 +355,22 @@ const PetsitterList: React.FC<ListProps> = ({ filters }) => {
                 </Card>
               ))}
 
-              {/* Loading more indicator */}
-              {loading && page > 1 && (
-                <div className="space-y-4">
-                  {Array.from({ length: 2 }).map((_, index) => (
-                    <Card key={`loading-${index}`} className="p-4 animate-pulse">
-                      <div className="flex gap-4 items-start">
-                        <Skeleton className="w-20 h-20 rounded-full" />
-                        <div className="flex-1 space-y-3">
-                          <Skeleton className="h-5 w-40" />
-                          <Skeleton className="h-4 w-60" />
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-3/4" />
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+              {/* Load More Indicator */}
+              {hasMore && (
+                <div className="py-4 text-center">
+                  <Button
+                    variant="ghost"
+                    disabled={loading}
+                    onClick={() => setPage(p => p + 1)}
+                    className="text-muted-foreground"
+                  >
+                    {loading ? "Loading more..." : "Load More Sitters"}
+                  </Button>
                 </div>
               )}
             </>
           )}
         </div>
-
-        {/* Pagination - Fixed at bottom */}
-        {(items.length > 0 || page > 1) && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t bg-background">
-            <div className="text-sm text-muted-foreground">
-              Showing {items.length} of {totalCount || "?"} sitters
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="gap-2"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </Button>
-
-              <div className="flex items-center gap-1 px-3 py-1 text-sm text-muted-foreground">
-                Page {page}{totalCount ? ` of ${Math.max(1, Math.ceil(totalCount / pageSize))}` : ""}
-              </div>
-
-              <Button
-                size="sm"
-                disabled={!hasMore || loading || !!error}
-                onClick={() => setPage((p) => p + 1)}
-                className="gap-2"
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

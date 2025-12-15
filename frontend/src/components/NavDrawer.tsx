@@ -1,5 +1,4 @@
-import { Menu} from "lucide-react"
-import React from "react"
+import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -16,7 +15,7 @@ export function NavDrawer() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="flex md:hidden">
         <Button variant="outline" size="icon">
-            <Menu/>
+          <Menu />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
