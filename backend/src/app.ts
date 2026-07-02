@@ -22,7 +22,10 @@ const app = new Hono<Env>()
   .use(logger())
   // Handle CORS and preflight early
   .use('*', cors({
-    origin: 'http://localhost:5173', // Your frontend URL
+    origin: [
+      "http://localhost:5173",
+      "https://petstop-5x9.pages.dev",
+    ], // Your frontend URL
     credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
