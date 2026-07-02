@@ -3,11 +3,11 @@ import { Navigate } from "react-router";
 import { useGetMeQuery } from "@/api/authApi";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { data: user, isLoading } = useGetMeQuery();
-  
+  const { data: user, isLoading, error } = useGetMeQuery();
+
   if (isLoading) {
-   
-    return  (
+
+    return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
@@ -16,11 +16,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  
-  if (!user) {
+
+  if (!user || error) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 

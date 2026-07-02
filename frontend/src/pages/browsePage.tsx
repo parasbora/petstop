@@ -1,29 +1,16 @@
-// In BrowsePage.tsx
-import { useState, useMemo } from "react";
-import Filters from "@/components/Filters";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Browse page: top filter bar + responsive card grid
+import { useState } from "react";
 import PetsitterList from "@/components/PetsitterList";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"; // NEW IMPORT
-import { Button } from "@/components/ui/button"; // NEW IMPORT
-import { Filter } from "lucide-react"; // NEW IMPORT
+import FilterBar, { type SortValue } from "@/components/FilterBar";
 
-// Assuming FiltersState is defined and available here
-// type FiltersState = {...}; 
 export type FiltersState = {
-  petType: "any" | "dog" | "cat" | "both"
-  minPricePerHour?: number
-  maxPricePerHour?: number
-  ratingMin?: number
-  nameQuery: string
-  locationQuery: string
-}
-type FiltersProps = {
-  value: FiltersState
-  onChange: React.Dispatch<React.SetStateAction<FiltersState>>
-  isMobileSheet?: boolean
-  onApply?: () => void
-}
+  petType: "any" | "dog" | "cat" | "both";
+  minPricePerHour?: number;
+  maxPricePerHour?: number;
+  ratingMin?: number;
+  nameQuery: string;
+  locationQuery: string;
+};
 
 export default function BrowsePage() {
   const [filters, setFilters] = useState<FiltersState>({
@@ -35,102 +22,44 @@ export default function BrowsePage() {
     locationQuery: "",
   });
 
-  const [sortBy, setSortBy] = useState<"relevance" | "price_asc" | "price_desc" | "rating_desc">("relevance");
-  const [isSheetOpen, setIsSheetOpen] = useState(false); // NEW STATE for mobile filter
-
-  // Check if filters are active (used for the mobile button badge)
-  const hasActiveFilters = useMemo(() =>
-    filters.petType !== "any" ||
-    filters.minPricePerHour !== undefined ||
-    filters.maxPricePerHour !== undefined ||
-    filters.ratingMin !== undefined ||
-    (filters.nameQuery ?? "").trim() !== "" ||
-    filters.locationQuery !== ""
-    , [filters]);
-
+  const [sortBy, setSortBy] = useState<SortValue>("relevance");
+  const [resultsText, setResultsText] = useState<string>("");
 
   return (
-    <div className="flex flex-col md:flex-row md:items-start gap-6 w-full md:h-[calc(100vh-8rem)]">
-
-      {/* --- 1. Desktop Filters Sidebar (Visible md and up) --- */}
-      <div className="hidden md:block md:h-full">
-        <Filters value={filters} onChange={setFilters} />
+    <div className="w-full">
+      {/* Page header */}
+      <div className="mx-auto mb-6 w-full max-w-6xl space-y-2 px-4  md:px-10">
+        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+          Find a pet sitter
+        </h1>
+        <p className="text-[15px] text-muted-foreground">
+          Browse trusted sitters near you and book with confidence.
+        </p>
       </div>
 
-      <Separator orientation="vertical" className="hidden md:block" />
-      <Separator orientation="horizontal" className="md:hidden" />
-
-      {/* --- 2. Mobile Filter Floating Button (Visible below md) --- */}
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetTrigger asChild>
-          {/* Fixed button for mobile that triggers the sheet */}
-          <Button
-            className="fixed bottom-6 right-6 md:hidden z-50 shadow-lg h-12 w-12 rounded-full"
-            variant="default"
-            size="icon"
-          >
-            <Filter className="w-5 h-5" />
-            {/* Active filter badge */}
-            {hasActiveFilters && (
-              <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 border border-background"></span>
-            )}
-          </Button>
-        </SheetTrigger>
-
-        <SheetContent side="left" className="w-full sm:max-w-xs overflow-y-auto">
-          <SheetHeader className="mb-4">
-            <SheetTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" /> Filter Sitters
-            </SheetTitle>
-          </SheetHeader>
-          {/* IMPORTANT: Pass a custom class to the Filters component to disable its internal margin/padding */}
-          <Filters
+      {/* Sticky filter bar — full-bleed glass strip attached under the navbar.
+          -mx-4/-mx-10 cancels LayoutWrapper's px padding exactly (no vw math,
+          which overflows on Windows because vw includes the scrollbar). */}
+      <div className="sticky top-16 z-30 -mx-4  bg-background/85 backdrop-blur-xl md:-mx-10">
+        <div className="mx-auto max-w-6xl px-4 py-3 md:px-10">
+          <FilterBar
             value={filters}
             onChange={setFilters}
-            isMobileSheet={true} // New prop for conditional rendering inside Filters
-            onApply={() => setIsSheetOpen(false)} // New callback to close sheet on apply
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            resultsText={resultsText}
           />
-        </SheetContent>
-      </Sheet>
-
-      {/* Main Content Area */}
-      <div className="flex-1 min-h-0 h-full flex flex-col">
-        {/* Header with sorting */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6 p-1 bg-background">
-          {/* ... (Your existing Header content remains) ... */}
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-foreground">Pet Sitters</h2>
-            <div className="text-sm text-muted-foreground">
-              {/* Note: You might want to update the result count here eventually */}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-sm font-medium hidden sm:block">Sort by</div>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-              <SelectTrigger className="w-[180px] bg-background">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="relevance">Relevance</SelectItem>
-                <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                <SelectItem value="rating_desc">Highest Rating</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {/* End of Header */}
         </div>
+      </div>
 
-        {/* Scrollable list area - PetsitterList handles everything internally */}
-        <div className="relative flex-1 min-h-0 md:overflow-y-auto fade-scroll">
-          {/* NOTE: You need to pass sortBy to PetsitterList which you forgot in the provided code */}
-          <PetsitterList filters={filters} sortBy={sortBy} />
-        </div>
+      {/* Results grid */}
+      <div className="mx-auto mt-8 w-full max-w-6xl">
+        <PetsitterList
+          filters={filters}
+          sortBy={sortBy}
+          onResultsTextChange={setResultsText}
+        />
       </div>
     </div>
   );
 }
-
-// NOTE: You must update the PetsitterList component definition to accept `sortBy` prop:
-// const PetsitterList: React.FC<ListProps> = ({ filters, sortBy }) => { ... }

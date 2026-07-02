@@ -6,15 +6,15 @@ import { UserSchema } from '../../schemas/user'
 import { handleError, successResponse } from '../../utils/response'
 import { Logger } from '../../utils/logger'
 import { rateLimitMiddleware } from '../middleware/rateLimit'
-
+import { setCookie } from 'hono/cookie'
 const auth = new Hono<Env>()
 
 // Apply rate limiting middleware
-// auth.post('/login', rateLimitMiddleware('login'))
+auth.post('/login', rateLimitMiddleware('login'))
 auth.post('/signup', rateLimitMiddleware('signup'))
 
 auth.post('/signup', async (c) => {
-  
+
   const userService = new UserService(c.get('prisma'))
   const body = await c.req.json()
 
@@ -36,12 +36,17 @@ auth.post('/signup', async (c) => {
       return handleError(c, null, "Failed to create user", 500)
     }
 
-    const jwt = await sign({ 
+    const jwt = await sign({
       id: user.id,
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
     }, c.env.JWT_SECRET)
-
-    return successResponse(c, { jwt }, "User created successfully")
+    await setCookie(c, 'auth_token', jwt, {
+      httpOnly: true,
+      secure: true, // true in production
+      sameSite: 'None', // or 'None' if cross-domain
+      maxAge: 24 * 60 * 60,
+    })
+    return successResponse(c, { user }, "User created successfully")
   } catch (e) {
     return handleError(c, e, "Failed to create user")
   }
@@ -70,15 +75,33 @@ auth.post('/login', async (c) => {
       return handleError(c, null, "Invalid email or password", 401)
     }
 
-    const jwt = await sign({ 
+    const jwt = await sign({
       id: user.id,
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60)
     }, c.env.JWT_SECRET)
 
-    return successResponse(c, { jwt })
+    await setCookie(c, 'auth_token', jwt, {
+      httpOnly: true,
+      secure: true, // true in production
+      sameSite: 'None', // or 'None' if cross-domain
+      maxAge: 24 * 60 * 60,
+    })
+    // Never expose the password hash to the client
+    const { password, ...publicUser } = user
+    return successResponse(c, { user: publicUser }, "User logged in successfully")
   } catch (e) {
     return handleError(c, e, "Authentication failed")
   }
+})
+
+auth.post('/logout', async (c) => {
+  await setCookie(c, 'auth_token', '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+    maxAge: 0,
+  })
+  return successResponse(c, null, "Logged out successfully")
 })
 
 export default auth 

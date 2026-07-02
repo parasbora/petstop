@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Icons } from "@/components/icons";
 import {
@@ -17,6 +18,10 @@ import { MobileNav } from "@/components/MobileNav";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const { pathname } = useLocation();
+  // On browse we keep a full-width bar so the filter bar can attach beneath it
+  // as one continuous glass header (Airbnb-style).
+  const isBrowse = pathname.startsWith("/browse");
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +31,48 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const navContent = (
+    <>
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem>
+            <div>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
+                <Icons.logo className="h-6 w-6" />
+              </NavigationMenuLink>
+            </div>
+          </NavigationMenuItem>
+
+          <span className="hidden md:flex gap-x-1">
+            <NavigationMenuItem>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/browse">
+                Browse
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+          </span>
+        </NavigationMenuList>
+      </NavigationMenu>
+
+      <div className="flex gap-x-1">
+        <ModeToggle />
+        <NavAccount />
+        <MobileNav />
+      </div>
+    </>
+  );
+
+  if (isBrowse) {
+    // No border-b here: the sticky filter strip below owns the single bottom
+    // border, so navbar + strip read as one continuous glass pane.
+    return (
+      <div className="fixed inset-x-0 top-0 z-50 h-16">
+        <div className="flex h-full w-full items-center justify-between bg-background/85 px-4 backdrop-blur-xl md:px-10">
+          {navContent}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -38,31 +85,7 @@ export default function Navbar() {
           ? "bg-card/20"
           : "bg-card/20 shadow-sm rounded-none  p-5"
       )}>
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <div>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
-                  <Icons.logo className="h-6 w-6" />
-                </NavigationMenuLink>
-              </div>
-            </NavigationMenuItem>
-
-            <span className="hidden md:flex gap-x-1">
-              <NavigationMenuItem>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/browse">
-                  Browse
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </span>
-          </NavigationMenuList>
-        </NavigationMenu>
-
-        <div className="flex gap-x-1">
-          <ModeToggle />
-          <NavAccount />
-          <MobileNav />
-        </div>
+        {navContent}
       </div>
     </div>
   );

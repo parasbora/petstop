@@ -1,5 +1,4 @@
-import { User ,LogOutIcon ,LogInIcon} from "lucide-react"
-
+import { User, LogInIcon, LogOutIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -7,48 +6,40 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { isAuthenticated, onAuthChange } from "@/lib/auth"
-import { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-import { useLogoutMutation } from "@/api/authApi"
+import { useGetMeQuery, useLogoutMutation } from "@/api/authApi"
 
 export function NavAccount() {
   const navigate = useNavigate()
-  const [authed, setAuthed] = useState(() => isAuthenticated())
-  const  [logout ] = useLogoutMutation()
-  useEffect(() => {
-    const off = onAuthChange(() => setAuthed(isAuthenticated()))
-    return off
-  }, [])
+  const { data: user } = useGetMeQuery()
+  const [logout] = useLogoutMutation()
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
-            <User/>
+          <User />
           <span className="sr-only">Account</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {!authed ? (
+        {!user ? (
           <>
             <DropdownMenuItem onClick={() => navigate('/login')}>
-              <LogInIcon />
-              login    
+              <LogInIcon className="mr-2 h-4 w-4" />
+              Sign In
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/signup')}>
-              <LogInIcon />
-              sign up
-            </DropdownMenuItem>
+
           </>
         ) : (
           <>
             <DropdownMenuItem onClick={() => navigate('/profile')}>
-              <User />
+              <User className="mr-2 h-4 w-4" />
               profile
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => { logout(); navigate('/'); }}>
-              <LogOutIcon/>logout
+              <LogOutIcon className="mr-2 h-4 w-4" />
+              logout
             </DropdownMenuItem>
           </>
         )}

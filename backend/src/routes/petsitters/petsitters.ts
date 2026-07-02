@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { PetSitterService } from '../../services/petsitterService'
 import { Env } from '../../app'
 import { PetSitterSchema, PetSitterUpdateSchema } from '../../schemas/petsitter'
+import { ReviewSchema } from '../../schemas/review'
 import { handleError, successResponse } from '../../utils/response'
 import { Logger } from '../../utils/logger'
 import { authMiddleware } from '../middleware/auth'
@@ -13,11 +14,31 @@ const petsitters = new Hono<Env>()
 // ---- PUBLIC ROUTES ----
 petsitters.get('/', async (c) => {
   const petSitterService = new PetSitterService(c.get('prisma'))
-  const page = parseInt(c.req.query('page') || '1')
-  const limit = parseInt(c.req.query('limit') || '10')
+  const pageRaw = Number(c.req.query('page') || '1')
+  const limitRaw = Number(c.req.query('limit') || '10')
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1
+  const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.floor(limitRaw) : 10
+  const sort = c.req.query('sort')
+  const petType = c.req.query('petType')
+  const minPricePerHourRaw = Number(c.req.query('minPricePerHour'))
+  const maxPricePerHourRaw = Number(c.req.query('maxPricePerHour'))
+  const ratingMinRaw = Number(c.req.query('ratingMin'))
+  const minPricePerHour = Number.isFinite(minPricePerHourRaw) ? minPricePerHourRaw : undefined
+  const maxPricePerHour = Number.isFinite(maxPricePerHourRaw) ? maxPricePerHourRaw : undefined
+  const ratingMin = Number.isFinite(ratingMinRaw) ? ratingMinRaw : undefined
+  const name = c.req.query('name')
+  const location = c.req.query('location')
 
   try {
-    const petSitters = await petSitterService.list(page, limit)
+    const petSitters = await petSitterService.list(page, limit, {
+      sort,
+      petType,
+      minPricePerHour,
+      maxPricePerHour,
+      ratingMin,
+      name,
+      location,
+    })
 
     return successResponse(c, petSitters)
   } catch (err) {
@@ -124,4 +145,24 @@ petsitters.post('/:id/availability', async (c) => {
   }
 })
 
-export default petsitters 
+petsitters.post('/:id/reviews', async (c) => {
+  const petSitterService = new PetSitterService(c.get('prisma'))
+  const body = await c.req.json()
+  const id = parseInt(c.req.param('id'))
+  const authorId = parseInt(c.get('userId'))
+
+  const { success, data, error } = ReviewSchema.safeParse(body)
+  if (!success) {
+    Logger.warn('Invalid review data', { errors: error.errors })
+    return handleError(c, error, error.errors[0].message, 400)
+  }
+
+  try {
+    const review = await petSitterService.createReview(id, authorId, data.rating, data.comment)
+    return successResponse(c, review, "Review submitted successfully")
+  } catch (err) {
+    return handleError(c, err, "Failed to submit review")
+  }
+})
+
+export default petsitters

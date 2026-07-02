@@ -4,10 +4,12 @@ import auth from './auth/auth'
 import users from './users/users'
 import petsitters from './petsitters/petsitters'
 import bookings from './bookings/bookings'
+import pets from './pets/pets'
 
 export const routes = (app: Hono<Env>) => {
     app.route('/auth', auth)
     app.route('/users', users)
     app.route('/petsitters', petsitters)
     app.route('/bookings', bookings)
+    app.route('/pets', pets)
 };

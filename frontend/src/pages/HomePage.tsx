@@ -11,7 +11,7 @@ function HomePage() {
           id="hero-img"
         />
         <div className="font-pacifico text-5xl text-primary">petstop</div>
-        <div className="font-Raleway font-semibold text-6xl tracking-tight  text-hero-secondary/50 z-10">
+        <div className="font-Raleway font-semibold text-6xl tracking-tight mt-10  text-hero-secondary/50 z-10">
           one stop for your purry needs
         </div>
         <div className="flex gap-2 mt-8">

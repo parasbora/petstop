@@ -131,8 +131,11 @@ export default function Filters({ value, onChange, className, isMobileSheet, onA
               {value.minPricePerHour || 0}-{value.maxPricePerHour || "Any"} / hr
               <button
                 onClick={() => {
-                  setField("minPricePerHour", undefined);
-                  setField("maxPricePerHour", undefined);
+                  onChange({
+                    ...value,
+                    minPricePerHour: undefined,
+                    maxPricePerHour: undefined,
+                  });
                 }}
                 className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
               >
@@ -235,14 +238,14 @@ export default function Filters({ value, onChange, className, isMobileSheet, onA
             Minimum Rating
           </Label>
           <Select
-            value={String(value.ratingMin ?? "0")}
-            onValueChange={(v) => setField("ratingMin", Number(v))}
+            value={value.ratingMin === undefined ? "any" : String(value.ratingMin)}
+            onValueChange={(v) => setField("ratingMin", v === "any" ? undefined : Number(v))}
           >
             <SelectTrigger className="w-full h-10 bg-background border-border hover:bg-accent transition-colors">
               <SelectValue placeholder="Any rating" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="0">Any rating</SelectItem>
+              <SelectItem value="any">Any rating</SelectItem>
               {/* Using descriptive text instead of emojis */}
               <SelectItem value="3">3.0+ stars</SelectItem>
               <SelectItem value="4">4.0+ stars</SelectItem>

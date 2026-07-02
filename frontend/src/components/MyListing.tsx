@@ -1,256 +1,305 @@
-import React from "react";
-type ListingLocationData = {
-  location: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  neighborhood: string;
-  isRemote: boolean;
-  serviceRadius: number;
-  exactLocation: boolean;
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGetMeQuery } from "@/api/authApi";
+import {
+  useGetPetSitterProfileQuery,
+  useUpdatePetSitterMutation,
+  useCreatePetSitterMutation,
+} from "@/api/petApi";
+
+type ProfileDTO = {
+  name?: string;
+  bio?: string | null;
+  location?: string;
+  hourlyRate?: number | null;
+  experience?: number | null;
+  serviceTypes?: string[];
+  petTypes?: string[];
 };
-// Listing Location Section Component
-const ListingLocationSection = () => {
-  // Mock data - would come from state/props
-  const [listingData, setListingData] = React.useState<ListingLocationData>({
-    location: "New York, NY",
-    address: "123 Pet Care Street",
-    city: "New York",
-    state: "NY",
-    zipCode: "10001",
-    neighborhood: "Manhattan",
-    isRemote: false, // for remote services like virtual consultations
-    serviceRadius: 5, // miles
-    exactLocation: false // whether to show exact address to clients
-  });
 
+type FormState = {
+  name: string;
+  location: string;
+  hourlyRate: string;
+  experience: string;
+  bio: string;
+  petTypes: string[];
+  services: string;
+};
 
-  const handleInputChange = <K extends keyof ListingLocationData>(
-    field: K,
-    value: ListingLocationData[K]
-  ) => {
-    setListingData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+const PET_OPTIONS: { value: string; label: string }[] = [
+  { value: "dog", label: "🐶 Dogs" },
+  { value: "cat", label: "🐱 Cats" },
+];
+
+const inputCls =
+  "w-full rounded-lg border border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground";
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <label className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+      {label}
+    </label>
+    {children}
+  </div>
+);
+
+const EMPTY_FORM: FormState = {
+  name: "",
+  location: "",
+  hourlyRate: "",
+  experience: "",
+  bio: "",
+  petTypes: [],
+  services: "",
+};
+
+const toForm = (p: ProfileDTO): FormState => ({
+  name: p.name ?? "",
+  location: p.location ?? "",
+  hourlyRate: p.hourlyRate != null ? String(p.hourlyRate) : "",
+  experience: p.experience != null ? String(p.experience) : "",
+  bio: p.bio ?? "",
+  petTypes: p.petTypes ?? [],
+  services: (p.serviceTypes ?? []).join(", "),
+});
+
+export default function ListingLocationSection() {
+  const { data: me } = useGetMeQuery();
+  const petSitterId = me?.petSitterId;
+  const isSitter = !!petSitterId;
+
+  const { data: profile, isLoading } = useGetPetSitterProfileQuery(
+    { id: String(petSitterId) },
+    { skip: !petSitterId },
+  );
+  const [updatePetSitter, { isLoading: saving }] = useUpdatePetSitterMutation();
+  const [createPetSitter, { isLoading: creating }] = useCreatePetSitterMutation();
+  const busy = saving || creating;
+
+  const [form, setForm] = useState<FormState | null>(null);
+
+  useEffect(() => {
+    if (profile) setForm(toForm(profile as ProfileDTO));
+    else if (!petSitterId) setForm(EMPTY_FORM);
+  }, [profile, petSitterId]);
+
+  // Existing sitter, profile still loading
+  if (isSitter && isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-4 w-40" />
+        <div className="grid gap-5 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-28 w-full" />
+      </div>
+    );
+  }
+
+  if (!form) return null;
+
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+    setForm((f) => (f ? { ...f, [key]: value } : f));
+
+  const togglePet = (value: string) =>
+    set(
+      "petTypes",
+      form.petTypes.includes(value)
+        ? form.petTypes.filter((p) => p !== value)
+        : [...form.petTypes, value],
+    );
+
+  const reset = () => profile && setForm(toForm(profile as ProfileDTO));
+
+  const save = async () => {
+    const trimmedBio = form.bio.trim();
+    if (form.name.trim().length < 2) {
+      toast.error("Name must be at least 2 characters");
+      return;
+    }
+    if (form.location.trim().length < 2) {
+      toast.error("Please enter a location");
+      return;
+    }
+    if (trimmedBio && trimmedBio.length < 10) {
+      toast.error("Bio must be at least 10 characters (or leave it empty)");
+      return;
+    }
+
+    const data: Record<string, unknown> = {
+      name: form.name.trim(),
+      location: form.location.trim(),
+      bio: trimmedBio || undefined,
+      hourlyRate: form.hourlyRate === "" ? undefined : Number(form.hourlyRate),
+      experience: form.experience === "" ? undefined : Number(form.experience),
+      petTypes: form.petTypes,
+      serviceTypes: form.services
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+
+    try {
+      if (isSitter) {
+        await updatePetSitter({ id: petSitterId, data }).unwrap();
+        toast.success("Listing updated");
+      } else {
+        await createPetSitter(data).unwrap();
+        toast.success("You're now a pet sitter! 🎉");
+      }
+    } catch (err) {
+      const msg = (err as { data?: { error?: string } })?.data?.error || "Could not save listing";
+      toast.error(msg);
+    }
   };
+
+  const serviceTags = form.services
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return (
-    <div className="space-y-6">
-      {/* Section Header */}
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Service Location</h3>
-        <p className="text-sm text-muted-foreground">
-          Set where you provide your pet sitting services
-        </p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+          {isSitter ? "My listing" : "Become a pet sitter"}
+        </h2>
+        {isSitter && (
+          <Link to={`/sitter-profile/${petSitterId}`}>
+            <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground hover:text-foreground">
+              View public profile
+            </Button>
+          </Link>
+        )}
       </div>
 
-      {/* Main Location Card */}
-      <div className="p-6 rounded-lg border bg-card space-y-4">
-        {/* Location Type Toggle */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Service Type</label>
-            <p className="text-xs text-muted-foreground">
-              {listingData.isRemote ? 'Remote services only' : 'In-person pet care'}
-            </p>
-          </div>
-          <button
-            onClick={() => handleInputChange('isRemote', !listingData.isRemote)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${listingData.isRemote ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${listingData.isRemote ? 'translate-x-6' : 'translate-x-1'
-                }`}
-            />
-          </button>
-        </div>
+      {!isSitter && (
+        <p className="-mt-4 text-sm text-muted-foreground">
+          Fill in your details to list your services and start receiving bookings.
+        </p>
+      )}
 
-        {!listingData.isRemote ? (
-          /* In-Person Location Settings */
-          <div className="space-y-4">
-            {/* Address Inputs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Street Address</label>
-                <input
-                  type="text"
-                  value={listingData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  className="w-full p-2 rounded-md border bg-background"
-                  placeholder="Enter your address"
-                />
-              </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Display name">
+          <input
+            className={inputCls}
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            placeholder="Your name"
+          />
+        </Field>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Neighborhood</label>
-                <input
-                  type="text"
-                  value={listingData.neighborhood}
-                  onChange={(e) => handleInputChange('neighborhood', e.target.value)}
-                  className="w-full p-2 rounded-md border bg-background"
-                  placeholder="e.g., Manhattan"
-                />
-              </div>
-            </div>
+        <Field label="Location">
+          <input
+            className={inputCls}
+            value={form.location}
+            onChange={(e) => set("location", e.target.value)}
+            placeholder="City / area"
+          />
+        </Field>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">City</label>
-                <input
-                  type="text"
-                  value={listingData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="w-full p-2 rounded-md border bg-background"
-                  placeholder="City"
-                />
-              </div>
+        <Field label="Hourly rate (₹)">
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            className={inputCls}
+            value={form.hourlyRate}
+            onChange={(e) => set("hourlyRate", e.target.value)}
+            placeholder="e.g. 250"
+          />
+        </Field>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">State</label>
-                <input
-                  type="text"
-                  value={listingData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="w-full p-2 rounded-md border bg-background"
-                  placeholder="State"
-                />
-              </div>
+        <Field label="Experience (years)">
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            className={inputCls}
+            value={form.experience}
+            onChange={(e) => set("experience", e.target.value)}
+            placeholder="e.g. 3"
+          />
+        </Field>
+      </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">ZIP Code</label>
-                <input
-                  type="text"
-                  value={listingData.zipCode}
-                  onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                  className="w-full p-2 rounded-md border bg-background"
-                  placeholder="ZIP"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Service Radius (miles)</label>
-                <select
-                  value={listingData.serviceRadius}
-                  onChange={(e) => handleInputChange('serviceRadius', parseInt(e.target.value))}
-                  className="w-full p-2 rounded-md border bg-background"
-                >
-                  <option value={1}>1 mile</option>
-                  <option value={3}>3 miles</option>
-                  <option value={5}>5 miles</option>
-                  <option value={10}>10 miles</option>
-                  <option value={15}>15 miles</option>
-                  <option value={20}>20 miles</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Location Visibility Toggle */}
-            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-              <div className="space-y-1">
-                <label className="text-sm font-medium">Show Exact Location</label>
-                <p className="text-xs text-muted-foreground">
-                  {listingData.exactLocation
-                    ? 'Clients will see your full address'
-                    : 'Clients will only see your neighborhood'
-                  }
-                </p>
-              </div>
+      <Field label="Pets you sit">
+        <div className="flex flex-wrap gap-2 pt-1">
+          {PET_OPTIONS.map((opt) => {
+            const active = form.petTypes.includes(opt.value);
+            return (
               <button
-                onClick={() => handleInputChange('exactLocation', !listingData.exactLocation)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${listingData.exactLocation ? 'bg-green-600' : 'bg-gray-200'
-                  }`}
+                key={opt.value}
+                type="button"
+                onClick={() => togglePet(opt.value)}
+                className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+                  active
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${listingData.exactLocation ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                />
+                {opt.label}
               </button>
-            </div>
+            );
+          })}
+        </div>
+      </Field>
 
-            {/* Map Preview Placeholder */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Location Preview</label>
-              <div className="h-32 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/20 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <div className="text-lg mb-1">🗺️</div>
-                  <p className="text-sm">Map preview would appear here</p>
-                  <p className="text-xs">Service area: {listingData.serviceRadius} mile radius</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Remote Services Settings */
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
-              <div className="flex items-start gap-3">
-                <div className="text-blue-600 text-lg">💻</div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-800">Remote Services</p>
-                  <p className="text-xs text-blue-700">
-                    You'll provide virtual consultations, training sessions, or remote pet monitoring services.
-                    Clients will contact you to schedule online sessions.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Service Description</label>
-              <textarea
-                placeholder="Describe your remote pet services (virtual consultations, training, etc.)"
-                className="w-full p-3 rounded-md border bg-background min-h-[100px]"
-              />
-            </div>
+      <Field label="Services offered">
+        <input
+          className={inputCls}
+          value={form.services}
+          onChange={(e) => set("services", e.target.value)}
+          placeholder="dog walking, overnight stays, grooming"
+        />
+        <p className="text-xs text-muted-foreground">Separate services with commas.</p>
+        {serviceTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {serviceTags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs capitalize text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
           </div>
         )}
+      </Field>
 
-        {/* Current Location Summary */}
-        <div className="p-4 rounded-lg bg-muted/30 border">
-          <h4 className="text-sm font-medium mb-2">Current Location Settings</h4>
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>📍 {listingData.isRemote ? 'Remote Services' : listingData.location}</p>
-            {!listingData.isRemote && (
-              <>
-                <p>🏠 {listingData.exactLocation ? 'Full address visible' : 'Neighborhood only'}</p>
-                <p>📏 Service radius: {listingData.serviceRadius} miles</p>
-              </>
-            )}
-          </div>
-        </div>
+      <Field label="About / bio">
+        <textarea
+          rows={4}
+          maxLength={500}
+          className={`${inputCls} resize-none`}
+          value={form.bio}
+          onChange={(e) => set("bio", e.target.value)}
+          placeholder="Tell pet owners about your experience and what makes you a great sitter…"
+        />
+      </Field>
+
+      <div className="flex flex-wrap gap-2 border-t border-border pt-6">
+        <Button onClick={save} disabled={busy} className="rounded-full px-6">
+          {isSitter
+            ? saving
+              ? "Saving…"
+              : "Save changes"
+            : creating
+              ? "Creating…"
+              : "Create sitter profile"}
+        </Button>
+        {isSitter && (
+          <Button onClick={reset} variant="outline" disabled={busy} className="rounded-full px-6">
+            Reset
+          </Button>
+        )}
       </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 justify-end">
-        <button className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-          Cancel
-        </button>
-        <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          Save Location Settings
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default ListingLocationSection;
-
-// Usage in your main listing component:
-/*
-export default function CreateListing() {
-  return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Create Pet Sitting Listing</h1>
-        <p className="text-muted-foreground">Set up your pet sitting service profile</p>
-      </div>
-      
-      <ListingLocationSection />
-      
-      {/* Other listing sections would go here * /}
     </div>
   );
 }
-*/

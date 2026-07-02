@@ -25,6 +25,8 @@ model User {
   petSitter PetSitter? @relation(fields: [petSitterId], references: [id])  // Optional relation to PetSitter
   petSitterId Int?   @unique   // Foreign key to PetSitter (unique for one-to-one relationship)
   bookings  Booking[]  // A user can have multiple bookings
+  reviews   Review[]   // Reviews this user has written
+  pets      Pet[]      // Pets owned by this user
   createdAt DateTime @default(now()) // Date the user signed up
   updatedAt DateTime @updatedAt      // Date the user was last updated
 }
@@ -37,10 +39,14 @@ model PetSitter {
   experience Int?
   hourlyRate Float?
   serviceTypes String[]
+  petTypes   String[] @default([])   // Animals this sitter accepts (e.g. "cat", "dog")
+  rating     Float    @default(0)    // Denormalized average review rating (0 if none)
+  reviewCount Int     @default(0)    // Denormalized count of reviews
   user       User?    @relation                     // Relation back to a User (optional)
   userId     Int?     @unique                       // Optional userId for one-to-one relation with User (unique)
   bookings   Booking[] // A PetSitter can have many bookings
   availability PetSitterAvailability[]  // Track PetSitter availability (multiple date ranges)
+  reviews    Review[]  // Reviews left for this PetSitter
   createdAt DateTime @default(now())  // When the PetSitter was created
   updatedAt DateTime @updatedAt  // When the PetSitter was last updated
   location String @default("Unknown")
@@ -48,15 +54,55 @@ model PetSitter {
 
 }
 
+// Review model, a rating + optional comment left by a user for a PetSitter
+model Review {
+  id          Int      @id @default(autoincrement())
+  rating      Int      // Star rating, 1-5
+  comment     String?
+  petSitter   PetSitter @relation(fields: [petSitterId], references: [id])
+  petSitterId Int
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([petSitterId, authorId]) // One review per user per sitter
+}
+
 // Booking model, representing a pet sitting booking
 model Booking {
   id         Int      @id @default(autoincrement())  // Unique identifier
   startDate  DateTime                                // Booking start date
   endDate    DateTime                                // Booking end date
+  status     BookingStatus @default(PENDING)         // Lifecycle state of the booking
+  message    String?                                 // Optional note from the pet owner
   petSitter  PetSitter @relation(fields: [petSitterId], references: [id]) // Link to PetSitter
   petSitterId Int    // Foreign key to PetSitter
   user       User     @relation(fields: [userId], references: [id])  // Link to User
   userId     Int      // Foreign key to User
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+// Pet model, a pet owned by a user
+model Pet {
+  id        Int      @id @default(autoincrement())
+  name      String
+  species   String   // e.g. "dog", "cat"
+  breed     String
+  age       Int
+  owner     User     @relation(fields: [ownerId], references: [id])
+  ownerId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // PetSitterAvailability model, to track PetSitter's available dates

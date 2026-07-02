@@ -8,9 +8,11 @@ GET /users/:id/bookings — Get all bookings for a user
 
 PetSitter-related Endpoints
 
-GET /petsitters — Get a list of available pet sitters
+GET /petsitters — Get a list of available pet sitters (filters: page, limit, sort, petType, minPricePerHour, maxPricePerHour, ratingMin, name, location)
 GET /petsitters/:id — Get a specific pet sitter’s details
 GET /petsitters/:id/bookings — Get all bookings for a specific pet sitter
+POST /petsitters/:id/availability — Add an availability window (auth required)
+POST /petsitters/:id/reviews — Submit/update a review for a sitter (auth required; body: { rating: 1-5, comment? })
 
 Booking-related Endpoints
 

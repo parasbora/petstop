@@ -1,23 +1,17 @@
 import { z } from 'zod'
 
-
-
-//   startDate  DateTime                                // Booking start date
-//   endDate    DateTime                                // Booking end date
-//   petSitter  PetSitter @relation(fields: [petSitterId], references: [id]) // Link to PetSitter
-//   petSitterId Int    // Foreign key to PetSitter
-//   user       User     @relation(fields: [userId], references: [id])  // Link to User
-//   userId     
-
-export const bookingSchema = z.object({
-
-    startDate: z.string().datetime(),           // ISO 8601 datetime string
-    endDate: z.string().datetime(),
+export const createBookingSchema = z
+  .object({
     petSitterId: z.number().int().positive(),
-    userId: z.number().int().positive(),
-});
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
+    message: z.string().max(500).optional(),
+  })
+  .refine((data) => new Date(data.startDate) < new Date(data.endDate), {
+    message: 'endDate must be after startDate',
+    path: ['endDate'],
+  })
 
-export const bookingSchemaStrict = bookingSchema.refine(
-    (data) => data.startDate < data.endDate,
-    { message: "endDate must be after startDate", path: ["endDate"] }
-);
+export const updateBookingStatusSchema = z.object({
+  status: z.enum(['ACCEPTED', 'DECLINED', 'CANCELLED', 'COMPLETED']),
+})
