@@ -15,6 +15,8 @@ import {
 import { ModeToggle } from "@/components/mode-toggle";
 import { NavAccount } from "@/components/nav-account";
 import { MobileNav } from "@/components/MobileNav";
+import { useGetMeQuery } from "@/api/authApi";
+import { useGetBookingRequestsQuery } from "@/api/bookingApi";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -22,6 +24,11 @@ export default function Navbar() {
   // On browse we keep a full-width bar so the filter bar can attach beneath it
   // as one continuous glass header (Airbnb-style).
   const isBrowse = pathname.startsWith("/browse");
+
+  const { data: user } = useGetMeQuery();
+  const isSitter = !!user?.petSitterId;
+  const { data: requests } = useGetBookingRequestsQuery(undefined, { skip: !isSitter });
+  const pendingCount = requests?.filter((b) => b.status === "PENDING").length ?? 0;
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -50,6 +57,22 @@ export default function Navbar() {
                 Browse
               </NavigationMenuLink>
             </NavigationMenuItem>
+
+            {isSitter && (
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  className={cn(navigationMenuTriggerStyle(), "relative")}
+                  href="/sitter-hub"
+                >
+                  Sitter Hub
+                  {pendingCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                      {pendingCount}
+                    </span>
+                  )}
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            )}
           </span>
         </NavigationMenuList>
       </NavigationMenu>
