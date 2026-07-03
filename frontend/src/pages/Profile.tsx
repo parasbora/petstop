@@ -58,7 +58,7 @@ export default function Profile() {
   return (
     <div className="mx-auto w-full max-w-3xl py-6">
       {/* Header */}
-      <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+      <h1 className="font-newsreader text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
         Your account
       </h1>
       <p className="mt-2 text-[15px] text-muted-foreground">

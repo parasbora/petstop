@@ -90,7 +90,7 @@ export default function Navbar() {
     // border, so navbar + strip read as one continuous glass pane.
     return (
       <div className="fixed inset-x-0 top-0 z-50 h-16">
-        <div className="flex h-full w-full items-center justify-between bg-background/85 px-4 backdrop-blur-xl md:px-10">
+        <div className="flex h-full w-full items-center justify-between bg-background/90 px-4 backdrop-blur-2xl md:px-10">
           {navContent}
         </div>
       </div>
@@ -103,10 +103,10 @@ export default function Navbar() {
       isScrolled ? "top-4 max-w-sm mx-4" : "top-0 max-w-full "
     )}>
       <div className={cn(
-        "flex justify-between w-full p-1 rounded-lg ring-1 ring-border backdrop-blur-xl transition-all duration-300 ease-in ",
+        "flex justify-between w-full p-1 rounded-lg ring-1 ring-border backdrop-blur-2xl transition-all duration-300 ease-in ",
         isScrolled
-          ? "bg-card/20"
-          : "bg-card/20 shadow-sm rounded-none  p-5"
+          ? "bg-background/90"
+          : "bg-background/90 rounded-none  p-5"
       )}>
         {navContent}
       </div>

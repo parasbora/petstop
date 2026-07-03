@@ -177,7 +177,7 @@ export class PetSitterService {
     }
   }
 
-  async list(page: number = 1, limit: number = 10, options: ListOptions = {}) {
+  async list(page: number = 1, limit: number = 9, options: ListOptions = {}) {
     try {
       const where: any = {}
 

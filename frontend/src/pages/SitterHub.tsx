@@ -30,7 +30,7 @@ export default function SitterHub() {
   if (!isSitter) {
     return (
       <div className="mx-auto w-full max-w-3xl py-6">
-        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+        <h1 className="font-newsreader text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
           Become a sitter
         </h1>
         <p className="mt-2 text-[15px] text-muted-foreground">
@@ -45,7 +45,7 @@ export default function SitterHub() {
 
   return (
     <div className="mx-auto w-full max-w-3xl py-6">
-      <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+      <h1 className="font-newsreader text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
         Sitter Hub
       </h1>
       <p className="mt-2 text-[15px] text-muted-foreground">

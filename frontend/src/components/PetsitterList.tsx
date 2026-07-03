@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Star, Calendar } from "lucide-react";
+import { Star, Calendar, ArrowDown } from "lucide-react";
 import { apiBase } from "@/lib/auth";
 import { Link } from "react-router-dom";
 
@@ -84,7 +84,7 @@ const PetsitterList: React.FC<ListProps> = ({ filters, sortBy, onResultsTextChan
   // the small delay is unnoticeable, while typing no longer spams requests.
   const debouncedFilters = useDebouncedValue(filters, 350);
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 9;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -305,6 +305,7 @@ const PetsitterList: React.FC<ListProps> = ({ filters, sortBy, onResultsTextChan
                 className="rounded-full px-8"
               >
                 {loading ? "Loading more…" : "Load more sitters"}
+                <ArrowDown></ArrowDown>
               </Button>
             </div>
           )}

@@ -373,7 +373,7 @@ export default function SitterProfile() {
           className="h-20 w-20 rounded-full object-cover"
         />
         <div className="min-w-0">
-          <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+          <h1 className="font-newsreader text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
             {sitter.name}
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-muted-foreground">

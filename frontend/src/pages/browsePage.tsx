@@ -29,7 +29,7 @@ export default function BrowsePage() {
     <div className="w-full">
       {/* Page header */}
       <div className="mx-auto mb-6 w-full max-w-6xl space-y-2 px-4  md:px-10">
-        <h1 className="font-serif text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+        <h1 className="font-newsreader text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
           Find a pet sitter
         </h1>
         <p className="text-[15px] text-muted-foreground">
@@ -40,7 +40,7 @@ export default function BrowsePage() {
       {/* Sticky filter bar — full-bleed glass strip attached under the navbar.
           -mx-4/-mx-10 cancels LayoutWrapper's px padding exactly (no vw math,
           which overflows on Windows because vw includes the scrollbar). */}
-      <div className="sticky top-16 z-30 -mx-4  bg-background/85 backdrop-blur-xl md:-mx-10">
+      <div className="sticky top-16 z-30 -mx-4  bg-background/90 backdrop-blur-2xl md:-mx-10">
         <div className="mx-auto max-w-6xl px-4 py-3 md:px-10">
           <FilterBar
             value={filters}
