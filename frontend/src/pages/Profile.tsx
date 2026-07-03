@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import ListingLocationSection from '@/components/MyListing'
 import BookingsSection from '@/components/BookingsSection'
 import PetsSection from '@/components/PetsSection'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PawPrint } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useGetMeQuery } from '@/api/authApi'
 
 // Small uppercase section label
@@ -35,7 +34,6 @@ const ProfileSkeleton = () => (
 const SECTIONS = [
   { id: 'pets', label: 'My pets' },
   { id: 'bookings', label: 'Bookings' },
-  { id: 'sitting', label: 'Sitting' },
   { id: 'details', label: 'Details' },
 ] as const
 
@@ -44,6 +42,7 @@ type SectionId = (typeof SECTIONS)[number]['id']
 export default function Profile() {
   const { data: userData, isLoading } = useGetMeQuery()
   const [activeSection, setActiveSection] = useState<SectionId>('pets')
+  const navigate = useNavigate()
 
   if (isLoading) return <ProfileSkeleton />
   if (!userData) return <div className="py-24 text-center text-muted-foreground">No user data found.</div>
@@ -97,7 +96,7 @@ export default function Profile() {
         <Button
           className="mt-6 rounded-full px-5"
           size="sm"
-          onClick={() => setActiveSection('sitting')}
+          onClick={() => navigate('/sitter-hub')}
         >
           <PawPrint className="mr-2 h-4 w-4" />
           Become a pet sitter
@@ -140,13 +139,7 @@ export default function Profile() {
                 </Button>
               </Link>
             </div>
-            <BookingsSection isSitter={isSitter} />
-          </section>
-        )}
-
-        {activeSection === 'sitting' && (
-          <section>
-            <ListingLocationSection />
+            <BookingsSection />
           </section>
         )}
 

@@ -6,6 +6,7 @@ import { ReviewSchema } from '../../schemas/review'
 import { handleError, successResponse } from '../../utils/response'
 import { Logger } from '../../utils/logger'
 import { authMiddleware } from '../middleware/auth'
+import { petSitterUpdateRateLimitMiddleware } from '../middleware/rateLimit'
 
 
 const petsitters = new Hono<Env>()
@@ -88,7 +89,7 @@ petsitters.post('/', async (c) => {
 
 
 
-petsitters.put('/:id', async (c) => {
+petsitters.put('/:id', petSitterUpdateRateLimitMiddleware, async (c) => {
   const petSitterService = new PetSitterService(c.get('prisma'))
   const body = await c.req.json()
   const id = parseInt(c.req.param('id'))

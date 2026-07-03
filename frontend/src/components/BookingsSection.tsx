@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   useGetMyBookingsQuery,
-  useGetBookingRequestsQuery,
   useUpdateBookingStatusMutation,
   type Booking,
   type BookingStatus,
@@ -24,7 +23,7 @@ const formatDate = (iso: string) =>
 
 const formatRange = (start: string, end: string) => `${formatDate(start)} – ${formatDate(end)}`
 
-function BookingRow({ booking, perspective }: { booking: Booking; perspective: 'owner' | 'sitter' }) {
+export function BookingRow({ booking, perspective }: { booking: Booking; perspective: 'owner' | 'sitter' }) {
   const [updateStatus, { isLoading }] = useUpdateBookingStatusMutation()
 
   const act = async (status: BookingStatus) => {
@@ -102,32 +101,27 @@ function BookingRow({ booking, perspective }: { booking: Booking; perspective: '
   )
 }
 
-function EmptyState({ isSitter }: { isSitter: boolean }) {
+function EmptyState() {
   return (
     <div className="flex flex-col items-center py-16 text-center">
       <Calendar className="mb-4 h-8 w-8 text-muted-foreground/50" />
       <h3 className="text-lg font-medium text-foreground">No bookings yet</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-        {isSitter ? 'Booking requests from pet owners will show up here.' : 'Book your first pet service.'}
-      </p>
-      {!isSitter && (
-        <Link to="/browse" className="mt-5">
-          <Button className="rounded-full px-5" size="sm">
-            Browse sitters
-          </Button>
-        </Link>
-      )}
+      <p className="mt-1 max-w-sm text-sm text-muted-foreground">Book your first pet service.</p>
+      <Link to="/browse" className="mt-5">
+        <Button className="rounded-full px-5" size="sm">
+          Browse sitters
+        </Button>
+      </Link>
     </div>
   )
 }
 
-export default function BookingsSection({ isSitter }: { isSitter: boolean }) {
-  const { data: myBookings, isLoading: loadingMine } = useGetMyBookingsQuery()
-  const { data: requests, isLoading: loadingRequests } = useGetBookingRequestsQuery(undefined, {
-    skip: !isSitter,
-  })
+// Bookings you made as a pet owner. Booking requests you receive as a sitter
+// live on the Sitter Hub page instead, so this stays focused on one thing.
+export default function BookingsSection() {
+  const { data: myBookings, isLoading } = useGetMyBookingsQuery()
 
-  if (loadingMine || (isSitter && loadingRequests)) {
+  if (isLoading) {
     return (
       <div className="space-y-3 pt-2">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -137,44 +131,15 @@ export default function BookingsSection({ isSitter }: { isSitter: boolean }) {
     )
   }
 
-  const hasRequests = isSitter && (requests?.length ?? 0) > 0
-  const hasMine = (myBookings?.length ?? 0) > 0
-
-  if (!hasRequests && !hasMine) {
-    return <EmptyState isSitter={isSitter} />
+  if (!myBookings || myBookings.length === 0) {
+    return <EmptyState />
   }
 
   return (
-    <div className="space-y-10 pt-2">
-      {isSitter && (
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Booking requests
-          </h3>
-          {requests && requests.length > 0 ? (
-            <div className="mt-2 divide-y divide-border">
-              {requests.map((b) => (
-                <BookingRow key={b.id} booking={b} perspective="sitter" />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-4 text-sm italic text-muted-foreground">No requests yet.</p>
-          )}
-        </div>
-      )}
-
-      <div>
-        <h3 className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">My bookings</h3>
-        {myBookings && myBookings.length > 0 ? (
-          <div className="mt-2 divide-y divide-border">
-            {myBookings.map((b) => (
-              <BookingRow key={b.id} booking={b} perspective="owner" />
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 text-sm italic text-muted-foreground">You haven&apos;t booked any sitters yet.</p>
-        )}
-      </div>
+    <div className="divide-y divide-border pt-2">
+      {myBookings.map((b) => (
+        <BookingRow key={b.id} booking={b} perspective="owner" />
+      ))}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import Signup from "./pages/Signup";
 import BrowsePage from "./pages/browsePage";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
+import SitterHub from "./pages/SitterHub";
 import LayoutWrapper from "./components/LayoutWrapper";
 import SitterProfile from "./components/SitterProfile";
 import { Toaster } from "@/components/ui/sonner"
@@ -29,6 +30,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/sitter-hub" element={<ProtectedRoute><SitterHub /></ProtectedRoute>} />
             <Route path="/sitter-profile/:id" element={<SitterProfile />} />
             <Route path="/sitter-profile/not-found" element={<EnhancedNotFound />} />
           </Routes>

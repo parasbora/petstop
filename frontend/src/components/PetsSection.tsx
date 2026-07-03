@@ -181,6 +181,7 @@ export default function PetsSection() {
               </div>
               <button
                 onClick={() => remove(pet.id)}
+           
                 className="shrink-0 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label={`Remove ${pet.name}`}
               >
@@ -195,10 +196,10 @@ export default function PetsSection() {
         <AddPetForm onDone={() => setShowForm(false)} />
       ) : pets && pets.length > 0 ? (
         <Button
-          variant="ghost"
+          variant="default"
           size="sm"
           onClick={() => setShowForm(true)}
-          className="rounded-full text-muted-foreground hover:text-foreground"
+          className="rounded-full "
         >
           <Plus className="mr-1.5 h-4 w-4" />
           Add another pet

@@ -3,6 +3,7 @@ import { Logger } from '../../utils/logger'
 // Rate limiting store
 const loginAttempts = new Map<string, { count: number; lastAttempt: number }>()
 const signupAttempts = new Map<string, { count: number; lastAttempt: number }>()
+const petSitterUpdateAttempts = new Map<string, { count: number; lastAttempt: number }>()
 
 // Helper function for rate limiting
 const checkRateLimit = (ip: string | null, attempts: Map<string, { count: number; lastAttempt: number }>, maxAttempts: number = 5, windowMinutes: number = 15): boolean => {
@@ -40,6 +41,18 @@ export const rateLimitMiddleware = (type: 'login' | 'signup') => {
 
     await next()
   }
+}
+
+// Limits how often a sitter can update their listing (keyed by user id,
+// since this is an authenticated route rather than a public one).
+export const petSitterUpdateRateLimitMiddleware = async (c: any, next: Function) => {
+  const userId = String(c.get('userId'))
+
+  if (!checkRateLimit(userId, petSitterUpdateAttempts, 5, 60)) {
+    return c.json({ error: "Too many profile updates. Please try again in an hour." }, 429)
+  }
+
+  await next()
 }
 
 // Helper function to reset rate limiter (for testing)
